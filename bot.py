@@ -8,7 +8,7 @@ from datetime import time
 from zoneinfo import ZoneInfo
 
 from telegram import Update
-from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, ApplicationBuilder, CommandHandler
 
 import db
 from cmd_delete import delete_birthday
@@ -17,8 +17,8 @@ from cmd_misc import help_command, start
 from cmd_remind import remind_command
 from cmd_view import all_birthdays, month_birthdays, view_birthdays, week_birthdays
 from conv_add import add_conversation
+from conv_edit import edit_conversation
 from jobs import daily_birthday_check, monthly_birthday_list, weekly_birthday_list
-from voice_add import handle_voice_message
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -45,6 +45,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(add_conversation)
+    app.add_handler(edit_conversation)
     app.add_handler(CommandHandler("delete", delete_birthday))
     app.add_handler(CommandHandler("view", view_birthdays))
     app.add_handler(CommandHandler("week", week_birthdays))
@@ -52,8 +53,6 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("all", all_birthdays))
     app.add_handler(CommandHandler("group", group_command))
     app.add_handler(CommandHandler("remind", remind_command))
-    # Voice notes (private chats only): one-shot "Add Sarah's birthday..." -> parsed and saved.
-    app.add_handler(MessageHandler(filters.VOICE, handle_voice_message))
     app.add_error_handler(on_error)
 
     # Daily at 00:00 local time: today\'s birthdays -> DM owners + linked groups.

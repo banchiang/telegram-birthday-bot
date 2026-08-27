@@ -6,11 +6,12 @@ you automatically, and can post category-based reminders into a group chat.
 ## Features
 
 - `/add` — add a birthday (name, date of birth, color from 21 color options,
-  optional category)
-- **Voice add** — send a voice note like *"Add Sarah's birthday, March 3rd
-  1995, make it blue"* and the bot transcribes and saves it directly, no
-  typing, no button-tapping, no API key or account — it runs entirely on
-  your own server and costs nothing (see section 1b)
+  optional category). When it asks for the date, you can type it or send a
+  **voice note** saying it instead — no typing required for that step (see
+  section 1b)
+- `/edit` — lists all your birthdays with their IDs, then lets you pick one
+  and update its name, date, and color — prompted the same way as `/add`
+  (voice note works for the date step here too)
 - `/delete <id>` — remove a birthday by its ID
 - `/week`, `/month`, `/all` — list birthdays this week, this month, or every
   birthday (soonest first), all color-coded
@@ -53,34 +54,31 @@ long-polling, so you don't need to register a webhook URL or open any ports.
 
 ---
 
-## 1b. Voice-note add (free, no setup needed)
+## 1b. Voice-note date entry (free, no setup needed)
 
-Voice add works out of the box — no API key, no account, no extra step.
-Just send the bot a voice note like *"Add Sarah's birthday, March 3rd 1995,
-make it blue"* and it saves it directly.
+When `/add` or `/edit` asks for the date of birth, you can send a voice note
+instead of typing — just say the date, e.g. *"March 3rd 1995"* or *"25
+December"*. The name is still typed and the color is still picked with the
+button keyboard, exactly as before; voice only replaces the date step.
+
+Voice works out of the box — no API key, no account, no extra step needed.
 
 Under the hood: the bot downloads the voice note and transcribes it locally
 using [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (an
 efficient, open-source speech-to-text model that runs on the bot's own
-server — nothing is sent to any third party), then a small built-in rule-based
-parser pulls out the name, date, and color from the transcript with no
-external API call either. The whole feature costs $0 to run, however much
-you use it.
+server — nothing is sent to any third party), then a small built-in
+rule-based parser pulls the date out of the transcript with no external API
+call either. The whole feature costs $0 to run, however much you use it.
 
 **Trade-offs versus a paid AI service, worth knowing:**
 - The default model (`base`, ~75MB) is fast and works well for clear speech,
-  but can stumble on unusual names, heavy accents, or noisy audio — a bigger
-  model (`WHISPER_MODEL_SIZE=small` or `medium` in your environment
-  variables) is more accurate but slower and needs more RAM.
-- The text parser expects roughly the pattern *"Add \<name\>'s birthday,
-  \<date\>, make it \<color\>"* — the date and color parts are optional and
-  fairly flexible (month names, "25 December", "3rd of March", or numeric
-  DD-MM-YYYY all work), but very unusual phrasing may not parse. If it
-  can't find a name and a valid date, it tells you what it heard and asks
-  you to try again or use `/add`.
-- The color word just needs to be close: exact color names (e.g.
-  "Peacock"), or common everyday words like "blue"/"red"/"pink" get mapped
-  to the nearest of the 21 options. No color mentioned defaults to Lavender.
+  but can stumble on unusual accents or noisy audio — a bigger model
+  (`WHISPER_MODEL_SIZE=small` or `medium` in your environment variables) is
+  more accurate but slower and needs more RAM.
+- The date parser understands month names, "25 December", "3rd of March",
+  and numeric `DD-MM` / `DD-MM-YYYY` — but very unusual phrasing may not
+  parse. If it can't find a valid date in what you said, it tells you what
+  it heard and asks you to try again or type the date instead.
 - The first voice note after each deploy/restart takes a little longer,
   since the model downloads and loads into memory on first use; after that
   it stays loaded and responds quickly.
@@ -147,12 +145,14 @@ Fly.io (`fly launch`, then `fly volumes create data` and mount it at
 ```
 /start, /help          Show what the bot can do
 /add                   Add a birthday (guided: name -> date -> color -> category)
-/delete <id>           Delete a birthday by ID (IDs are shown in /week, /month, /all, /view)
+                        date step accepts a typed value or a voice note
+/edit                  Lists your birthdays with IDs, then edit one by ID
+                        (guided: name -> date -> color, same as /add)
+/delete <id>           Delete a birthday by ID (IDs are shown in /week, /month, /all, /view, /edit)
 /week                  Birthdays this week (Monday-Sunday)
 /month                 Birthdays this calendar month
 /all                   All birthdays, soonest upcoming first
 /view group <name>     Birthdays in one category (the only form /view supports)
-(voice note)            Say it instead of typing: "Add <name>'s birthday, <date>, make it <color>"
 
 /group create <name>   New category, e.g. /group create Family
 /group list            List your categories
@@ -167,11 +167,12 @@ Fly.io (`fly launch`, then `fly volumes create data` and mount it at
 ```
 
 Dates are entered as `DD-MM-YYYY` (e.g. `25-12-1990`) or `DD-MM` if you'd
-rather not store the year (age won't be shown for those).
+rather not store the year (age won't be shown for those) — or spoken as a
+voice note during `/add` or `/edit`.
 
-When adding a birthday you can now pick from 21 colors: the 11 official
-Google Calendar colors plus 10 extra popular ones (Red, Black, White, Brown,
-Turquoise, Pink, Gold, Navy, Mint, Coral).
+When adding or editing a birthday you can pick from 21 colors: the 11
+official Google Calendar colors plus 10 extra popular ones (Red, Black,
+White, Brown, Turquoise, Pink, Gold, Navy, Mint, Coral).
 
 ## Notes / limitations
 

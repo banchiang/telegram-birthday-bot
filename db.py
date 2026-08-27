@@ -73,6 +73,18 @@ def add_birthday(owner_id, name, month, day, year, color_id, group_id=None):
         return cur.lastrowid
 
 
+def update_birthday(owner_id, birthday_id, name, month, day, year, color_id):
+    """Overwrite name/date/color for an existing birthday (category is left
+    untouched -- use assign_group for that). Returns True if a row was updated."""
+    with get_conn() as conn:
+        cur = conn.execute(
+            "UPDATE birthdays SET name = ?, month = ?, day = ?, year = ?, color_id = ? "
+            "WHERE id = ? AND owner_id = ?",
+            (name, month, day, year, color_id, birthday_id, owner_id),
+        )
+        return cur.rowcount > 0
+
+
 def delete_birthday(owner_id, birthday_id):
     with get_conn() as conn:
         cur = conn.execute(
