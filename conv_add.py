@@ -46,7 +46,7 @@ def color_keyboard():
     row = []
     for cid, c in GOOGLE_CALENDAR_COLORS.items():
         row.append(InlineKeyboardButton(f"{c['emoji']} {c['name']}", callback_data=f"addcolor:{cid}"))
-        if len(row) == 2:
+        if len(row) == 3:
             buttons.append(row)
             row = []
     if row:

@@ -1,4 +1,4 @@
-"""Entry point: wires up all handlers and the two scheduled jobs, then runs
+"""Entry point: wires up all handlers and the scheduled jobs, then runs
 the bot with long-polling.
 """
 
@@ -15,9 +15,9 @@ from cmd_delete import delete_birthday
 from cmd_group import group_command
 from cmd_misc import help_command, start
 from cmd_remind import remind_command
-from cmd_view import view_birthdays
+from cmd_view import all_birthdays, month_birthdays, view_birthdays, week_birthdays
 from conv_add import add_conversation
-from jobs import daily_birthday_check, monthly_birthday_list
+from jobs import daily_birthday_check, monthly_birthday_list, weekly_birthday_list
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -46,12 +46,20 @@ def build_app() -> Application:
     app.add_handler(add_conversation)
     app.add_handler(CommandHandler("delete", delete_birthday))
     app.add_handler(CommandHandler("view", view_birthdays))
+    app.add_handler(CommandHandler("week", week_birthdays))
+    app.add_handler(CommandHandler("month", month_birthdays))
+    app.add_handler(CommandHandler("all", all_birthdays))
     app.add_handler(CommandHandler("group", group_command))
     app.add_handler(CommandHandler("remind", remind_command))
     app.add_error_handler(on_error)
 
-    # Daily at 00:00 local time: today's birthdays -> DM owners + linked groups.
+    # Daily at 00:00 local time: today\'s birthdays -> DM owners + linked groups.
     app.job_queue.run_daily(daily_birthday_check, time=time(0, 0, tzinfo=TIMEZONE), name="daily_birthday_check")
+    # Every Monday at 00:00 local time: this week\'s birthdays -> DM owners.
+    # NOTE: since python-telegram-bot v20, `days` uses 0=Sunday..6=Saturday, so Monday=1.
+    app.job_queue.run_daily(
+        weekly_birthday_list, time=time(0, 0, tzinfo=TIMEZONE), days=(1,), name="weekly_birthday_list"
+    )
     # 1st of each month at 00:00 local time: full month list -> DM owners.
     app.job_queue.run_monthly(
         monthly_birthday_list, when=time(0, 0, tzinfo=TIMEZONE), day=1, name="monthly_birthday_list"

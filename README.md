@@ -5,12 +5,15 @@ you automatically, and can post category-based reminders into a group chat.
 
 ## Features
 
-- `/add` — add a birthday (name, date of birth, color from the 11 Google
-  Calendar colors, optional category)
+- `/add` — add a birthday (name, date of birth, color from 21 color options,
+  optional category)
 - `/delete <id>` — remove a birthday by its ID
-- `/view`, `/view <month>`, `/view group <name>` — list birthdays, color-coded
+- `/week`, `/month`, `/all` — list birthdays this week, this month, or every
+  birthday (soonest first), all color-coded
+- `/view group <name>` — list birthdays in one category
 - Automatic daily reminder at **00:00** (default timezone: `Asia/Singapore`)
   DMing you if anyone has a birthday that day
+- Automatic reminder every **Monday** at 00:00 with that week's birthdays
 - Automatic reminder on the **1st of every month** at 00:00 with the full
   list of that month's birthdays
 - `/group` — create/list/assign/delete categories to group birthdays
@@ -104,10 +107,11 @@ Fly.io (`fly launch`, then `fly volumes create data` and mount it at
 ```
 /start, /help          Show what the bot can do
 /add                   Add a birthday (guided: name -> date -> color -> category)
-/delete <id>           Delete a birthday by ID (IDs are shown in /view)
-/view                  All birthdays, soonest upcoming first
-/view <month>          e.g. /view march or /view 3
-/view group <name>     Birthdays in one category
+/delete <id>           Delete a birthday by ID (IDs are shown in /week, /month, /all, /view)
+/week                  Birthdays this week (Monday-Sunday)
+/month                 Birthdays this calendar month
+/all                   All birthdays, soonest upcoming first
+/view group <name>     Birthdays in one category (the only form /view supports)
 
 /group create <name>   New category, e.g. /group create Family
 /group list            List your categories
@@ -123,6 +127,10 @@ Fly.io (`fly launch`, then `fly volumes create data` and mount it at
 
 Dates are entered as `DD-MM-YYYY` (e.g. `25-12-1990`) or `DD-MM` if you'd
 rather not store the year (age won't be shown for those).
+
+When adding a birthday you can now pick from 21 colors: the 11 official
+Google Calendar colors plus 10 extra popular ones (Red, Black, White, Brown,
+Turquoise, Pink, Gold, Navy, Mint, Coral).
 
 ## Notes / limitations
 
