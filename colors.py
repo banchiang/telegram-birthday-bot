@@ -36,3 +36,14 @@ def color_label(color_id: int) -> str:
     if not c:
         return ""
     return f"{c['emoji']} {c['name']}"
+
+
+def color_id_by_name(name):
+    """Case-insensitive lookup: color name -> color_id. Returns None if no match."""
+    if not name:
+        return None
+    name = name.strip().lower()
+    for cid, c in GOOGLE_CALENDAR_COLORS.items():
+        if c["name"].lower() == name:
+            return cid
+    return None

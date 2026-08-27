@@ -7,6 +7,9 @@ you automatically, and can post category-based reminders into a group chat.
 
 - `/add` — add a birthday (name, date of birth, color from 21 color options,
   optional category)
+- **Voice add** — send a voice note like *"Add Sarah's birthday, March 3rd
+  1995, make it blue"* and the bot transcribes and saves it directly, no
+  typing or button-tapping needed (needs an `OPENAI_API_KEY`, see section 1b)
 - `/delete <id>` — remove a birthday by its ID
 - `/week`, `/month`, `/all` — list birthdays this week, this month, or every
   birthday (soonest first), all color-coded
@@ -49,6 +52,32 @@ long-polling, so you don't need to register a webhook URL or open any ports.
 
 ---
 
+## 1b. (Optional) Enable voice-note add
+
+Skip this section entirely if you're happy just using `/add` and typing —
+everything else in this bot works with zero extra setup. This section is
+only for the voice-note shortcut.
+
+1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys),
+   sign up or log in, and create a new API key. Copy it (starts with `sk-`).
+2. Add a small amount of credit to the account under **Settings → Billing** —
+   this feature costs a fraction of a cent per voice note (roughly
+   $0.003–0.006/minute for transcription, plus a tiny amount for parsing the
+   text into a name/date/color). A few dollars will last a very long time
+   for personal use.
+3. Set `OPENAI_API_KEY` as an environment variable wherever you deploy this
+   bot (same place you set `BOT_TOKEN` — see the Railway steps below).
+4. That's it. If `OPENAI_API_KEY` isn't set, the bot just replies asking you
+   to use `/add` instead when you send it a voice note — nothing breaks.
+
+Under the hood: the bot downloads the voice note, converts it from Telegram's
+`.ogg` format to `.mp3` (via `ffmpeg`, already included in the Docker image),
+sends it to OpenAI for transcription, then makes a second small OpenAI call
+to pull out the name/date/color as structured data before saving it exactly
+like a normal `/add` would.
+
+---
+
 ## 2. Run it locally (optional, to test before deploying)
 
 Requires Python 3.11+.
@@ -85,6 +114,8 @@ supports a persistent disk so your birthdays survive redeploys.
 3. In the service's **Variables** tab, add:
    - `BOT_TOKEN` = your BotFather token
    - `TIMEZONE` = `Asia/Singapore` (or omit — that's already the default)
+   - `OPENAI_API_KEY` = your OpenAI key (optional — only needed for voice-note
+     add, see section 1b; leave it out entirely to skip that feature)
 4. In the service's **Settings → Volumes**, add a volume mounted at
    `/app/data`. This is what makes your birthdays persist across restarts
    and redeploys (without it, SQLite data would live only in the
@@ -112,6 +143,7 @@ Fly.io (`fly launch`, then `fly volumes create data` and mount it at
 /month                 Birthdays this calendar month
 /all                   All birthdays, soonest upcoming first
 /view group <name>     Birthdays in one category (the only form /view supports)
+(voice note)            Say it instead of typing: "Add <name>'s birthday, <date>, make it <color>"
 
 /group create <name>   New category, e.g. /group create Family
 /group list            List your categories
