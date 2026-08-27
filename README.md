@@ -9,7 +9,8 @@ you automatically, and can post category-based reminders into a group chat.
   optional category)
 - **Voice add** — send a voice note like *"Add Sarah's birthday, March 3rd
   1995, make it blue"* and the bot transcribes and saves it directly, no
-  typing or button-tapping needed (needs an `OPENAI_API_KEY`, see section 1b)
+  typing, no button-tapping, no API key or account — it runs entirely on
+  your own server and costs nothing (see section 1b)
 - `/delete <id>` — remove a birthday by its ID
 - `/week`, `/month`, `/all` — list birthdays this week, this month, or every
   birthday (soonest first), all color-coded
@@ -52,29 +53,37 @@ long-polling, so you don't need to register a webhook URL or open any ports.
 
 ---
 
-## 1b. (Optional) Enable voice-note add
+## 1b. Voice-note add (free, no setup needed)
 
-Skip this section entirely if you're happy just using `/add` and typing —
-everything else in this bot works with zero extra setup. This section is
-only for the voice-note shortcut.
+Voice add works out of the box — no API key, no account, no extra step.
+Just send the bot a voice note like *"Add Sarah's birthday, March 3rd 1995,
+make it blue"* and it saves it directly.
 
-1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys),
-   sign up or log in, and create a new API key. Copy it (starts with `sk-`).
-2. Add a small amount of credit to the account under **Settings → Billing** —
-   this feature costs a fraction of a cent per voice note (roughly
-   $0.003–0.006/minute for transcription, plus a tiny amount for parsing the
-   text into a name/date/color). A few dollars will last a very long time
-   for personal use.
-3. Set `OPENAI_API_KEY` as an environment variable wherever you deploy this
-   bot (same place you set `BOT_TOKEN` — see the Railway steps below).
-4. That's it. If `OPENAI_API_KEY` isn't set, the bot just replies asking you
-   to use `/add` instead when you send it a voice note — nothing breaks.
+Under the hood: the bot downloads the voice note and transcribes it locally
+using [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (an
+efficient, open-source speech-to-text model that runs on the bot's own
+server — nothing is sent to any third party), then a small built-in rule-based
+parser pulls out the name, date, and color from the transcript with no
+external API call either. The whole feature costs $0 to run, however much
+you use it.
 
-Under the hood: the bot downloads the voice note, converts it from Telegram's
-`.ogg` format to `.mp3` (via `ffmpeg`, already included in the Docker image),
-sends it to OpenAI for transcription, then makes a second small OpenAI call
-to pull out the name/date/color as structured data before saving it exactly
-like a normal `/add` would.
+**Trade-offs versus a paid AI service, worth knowing:**
+- The default model (`base`, ~75MB) is fast and works well for clear speech,
+  but can stumble on unusual names, heavy accents, or noisy audio — a bigger
+  model (`WHISPER_MODEL_SIZE=small` or `medium` in your environment
+  variables) is more accurate but slower and needs more RAM.
+- The text parser expects roughly the pattern *"Add \<name\>'s birthday,
+  \<date\>, make it \<color\>"* — the date and color parts are optional and
+  fairly flexible (month names, "25 December", "3rd of March", or numeric
+  DD-MM-YYYY all work), but very unusual phrasing may not parse. If it
+  can't find a name and a valid date, it tells you what it heard and asks
+  you to try again or use `/add`.
+- The color word just needs to be close: exact color names (e.g.
+  "Peacock"), or common everyday words like "blue"/"red"/"pink" get mapped
+  to the nearest of the 21 options. No color mentioned defaults to Lavender.
+- The first voice note after each deploy/restart takes a little longer,
+  since the model downloads and loads into memory on first use; after that
+  it stays loaded and responds quickly.
 
 ---
 
@@ -114,8 +123,8 @@ supports a persistent disk so your birthdays survive redeploys.
 3. In the service's **Variables** tab, add:
    - `BOT_TOKEN` = your BotFather token
    - `TIMEZONE` = `Asia/Singapore` (or omit — that's already the default)
-   - `OPENAI_API_KEY` = your OpenAI key (optional — only needed for voice-note
-     add, see section 1b; leave it out entirely to skip that feature)
+   - (optional) `WHISPER_MODEL_SIZE` — only if you want a bigger/more
+     accurate voice-transcription model than the default; see section 1b
 4. In the service's **Settings → Volumes**, add a volume mounted at
    `/app/data`. This is what makes your birthdays persist across restarts
    and redeploys (without it, SQLite data would live only in the
