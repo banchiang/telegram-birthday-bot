@@ -45,6 +45,12 @@ def parse_dob(text: str):
     return day, month, year
 
 
+def capitalize_name(name: str) -> str:
+    """Capitalize the first letter of each word in a name (e.g. 'john smith'
+    -> 'John Smith'), leaving the rest of each word's casing untouched."""
+    return " ".join(w[:1].upper() + w[1:] for w in name.split())
+
+
 def color_keyboard():
     buttons = []
     row = []
@@ -81,6 +87,7 @@ async def add_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not name:
         await update.message.reply_text("Please send a valid name.")
         return NAME
+    name = capitalize_name(name)
     context.user_data["add_name"] = name
     await update.message.reply_text(
         "Got it. Now send their date of birth as DD-MM-YYYY (e.g. 25-12-1990),\n"

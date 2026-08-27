@@ -7,7 +7,7 @@ import os
 from datetime import time
 from zoneinfo import ZoneInfo
 
-from telegram import Update
+from telegram import BotCommand, Update
 from telegram.ext import Application, ApplicationBuilder, CommandHandler
 
 import db
@@ -32,6 +32,26 @@ async def on_error(update, context):
     logger.exception("Unhandled exception while processing update %s", update, exc_info=context.error)
 
 
+MAIN_COMMANDS = [
+    BotCommand("add", "Add a birthday"),
+    BotCommand("edit", "Edit an existing birthday"),
+    BotCommand("delete", "Delete a birthday by ID"),
+    BotCommand("week", "Birthdays this week"),
+    BotCommand("month", "Birthdays this month"),
+    BotCommand("all", "All birthdays, soonest first"),
+    BotCommand("view", "View birthdays in one category"),
+    BotCommand("group", "Manage birthday categories"),
+    BotCommand("remind", "Link reminders to a group chat"),
+    BotCommand("help", "Show what the bot can do"),
+]
+
+
+async def post_init(app: Application):
+    # Populates Telegram's built-in "/" command menu, so tapping the message
+    # input shows these as clickable suggestions instead of the user typing them.
+    await app.bot.set_my_commands(MAIN_COMMANDS)
+
+
 def build_app() -> Application:
     token = os.environ.get("BOT_TOKEN")
     if not token:
@@ -40,7 +60,7 @@ def build_app() -> Application:
             "and set it before running the bot (see README.md)."
         )
 
-    app = ApplicationBuilder().token(token).build()
+    app = ApplicationBuilder().token(token).post_init(post_init).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))

@@ -22,7 +22,7 @@ from telegram.ext import (
 import db
 import voice_add
 from colors import GOOGLE_CALENDAR_COLORS
-from conv_add import parse_dob
+from conv_add import parse_dob, capitalize_name
 
 SELECT_ID, NAME, DOB, COLOR = range(4)
 
@@ -94,6 +94,7 @@ async def edit_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not name:
         await update.message.reply_text("Please send a valid name.")
         return NAME
+    name = capitalize_name(name)
     context.user_data["edit_name"] = name
     await update.message.reply_text(
         "Got it. Now send the new date of birth as DD-MM-YYYY (e.g. 25-12-1990),\n"
